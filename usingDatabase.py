@@ -59,12 +59,14 @@ class DATA:
         # if flag == True - update information, else - create new record
         if flag:
             cur = myData.cursor()
-            sql_formula = 'UPDATE users SET full_name =' + name + 'WHERE id =' + str(user_id)
-            cur.execute(sql_formula)
+            sql_formula = 'UPDATE users SET full_name= %s WHERE id = %s'
+            values = (name, user_id)
+            cur.execute(sql_formula, values)
             cur.close()
             myData.commit()
             myData.close()
             return self.reworkDATA(user_id, name), 200
+
         else:
             cur = myData.cursor()
             sql_formula = 'INSERT INTO users (id, full_name) VALUES (%s, %s)'
@@ -84,7 +86,7 @@ class DATA:
             database=settings.database
         )
         cur = myData.cursor()
-        sql_formula = 'SELECT * FROM users WHERE id= ' + str(user_id)
+        sql_formula = 'SELECT * FROM users WHERE id = ' + str(user_id)
         cur.execute(sql_formula)
         for s in cur.fetchall():
             check = s
@@ -95,19 +97,23 @@ class DATA:
 
     def deleteDATA(self, user_id):
         # delete information about user with id == user_id
-        myData = mysql.connector.connect(
-            host=settings.host_name,
-            user=settings.user_name,
-            passwd=settings.user_password,
-            database=settings.database
-        )
-        cur = myData.cursor()
-        sql_formula = 'DELETE FROM users WHERE id = ' + str(user_id)
-        cur.execute(sql_formula)
-        cur.close()
-        myData.commit()
-        myData.close()
-        return f'User with id {user_id} is deleted.', 201
+        flag = self.checkDATA(user_id)
+        if flag:
+            myData = mysql.connector.connect(
+                host=settings.host_name,
+                user=settings.user_name,
+                passwd=settings.user_password,
+                database=settings.database
+            )
+            cur = myData.cursor()
+            sql_formula = 'DELETE FROM users WHERE id = ' + str(user_id)
+            cur.execute(sql_formula)
+            cur.close()
+            myData.commit()
+            myData.close()
+            return f'User with id {user_id} is deleted.', 201
+        else:
+            return 'User not found', 400
 
     def reworkDATA(self, user_id, name):  # create json
         user_json = {
